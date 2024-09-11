@@ -1,12 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import BackrondApp from './components/backrondApp';
+import WelcomePage from './components/welcomePage';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <BackrondApp>
+      <StatusBar hidden={true} />
+      <WelcomePage />
+    </BackrondApp>
   );
 }
 

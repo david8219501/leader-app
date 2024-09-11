@@ -1,0 +1,18 @@
+{
+  "user": {
+    "name": "פייגי",
+    "password": "1234",
+    "isActive": true
+  },
+  
+  "employees": [
+    {
+      "id": 1,
+      "name": "יוסי כהן"
+    },
+    {
+      "id": 2,
+      "name": "רחל לוי"
+    }
+  ]
+}
