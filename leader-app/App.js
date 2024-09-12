@@ -1,22 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import BackrondApp from './components/backrondApp';
-import WelcomePage from './components/welcomePage';
-
+import AppNavigator from './components/appNavigator';
 export default function App() {
   return (
-    <BackrondApp>
+    <>
       <StatusBar hidden={true} />
-      <WelcomePage />
-    </BackrondApp>
+      <AppNavigator />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

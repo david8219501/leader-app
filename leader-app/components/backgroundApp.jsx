@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 
-export default function BackrondApp({children}) {
+export default function BackgroundApp({children}) {
   return (
     <View style={styles.background}>
       <Image
