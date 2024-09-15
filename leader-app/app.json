@@ -12,19 +12,35 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "נא אפשר גישה למצלמה כדי לצלם תמונות",
+        "NSPhotoLibraryUsageDescription": "נא אפשר גישה לגלריה כדי לבחור תמונות"
+      },
+      "bundleIdentifier": "com.leaderapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "package": "com.leaderapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2f176d59-e462-4190-9e5a-533298be698f"
+      }
+    }
   }
 }

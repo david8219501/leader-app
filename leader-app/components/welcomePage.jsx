@@ -3,10 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 
-// פונקציה להורדת נתוני המשתמש מהשרת
 const fetchUserData = async () => {
   try {
-    const response = await axios.get('http://10.100.102.95:5000/api/users/1'); 
+    const response = await axios.get('http://192.168.41.43:5000/api/users/1'); 
     return response.data.data;
   } catch (error) {
     console.error('Error fetching user data:', error);
@@ -14,7 +13,6 @@ const fetchUserData = async () => {
   }
 };
 
-// פונקציה ליצירת ברכה לפי שעה
 const getGreeting = (firstName) => {
   const currentHour = new Date().getHours();
 
@@ -31,7 +29,6 @@ const getGreeting = (firstName) => {
   return greeting;
 };
 
-// קומפוננטת המסך הראשי
 export default function WelcomePage({ navigation }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +48,7 @@ export default function WelcomePage({ navigation }) {
   }
 
   if (!user) {
-    return <Text>Failed to load user data</Text>;
+    return <Text>טעינת נתוני המשתמש נכשלה</Text>;
   }
 
   const greetingText = getGreeting(user.firstName).split('\n');
@@ -81,7 +78,6 @@ export default function WelcomePage({ navigation }) {
   );
 }
 
-// סגנונות הקומפוננטה
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -93,7 +89,6 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: 'bold',
     color: '#2e6eb7',
-    fontFamily: 'ComicSansMS',
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -122,7 +117,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 20,
     color: 'gray',
-    fontFamily: 'ComicSansMS',
     fontWeight: 'bold',
     textAlign: 'center',
   },

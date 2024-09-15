@@ -39,26 +39,6 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         console.error(err.message);
       } else {
         console.log('Employees table created successfully.');
-
-        // Insert fake data
-        const insert = 'INSERT INTO employees (firstName, lastName, position, phoneNumber, email) VALUES (?, ?, ?, ?, ?)';
-        db.run(insert, ['יוסי', 'כהן', 'מנהל', '050-1234567', 'yossi@cohen.com'], (err) => {
-          if (err) {
-            console.error(err.message);
-          }
-        });
-        db.run(insert, ['מיכל', 'לוי', 'מזכירה', '050-2345678', 'michal@levi.com'], (err) => {
-          if (err) {
-            console.error(err.message);
-          }
-        });
-        db.run(insert, ['דניאל', 'מזרחי', 'מהנדס', '050-3456789', 'daniel@mizrahi.com'], (err) => {
-          if (err) {
-            console.error(err.message);
-          }
-        });
-
-        console.log('Fake data inserted into employees table.');
       }
     });
   }

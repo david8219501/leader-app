@@ -6,7 +6,7 @@ app.use(cors());
 app.use(express.json());
 
 var db = require("./database.js");
-
+-
 // Basic route
 app.get('/', (req, res) => {
   res.send('Server is running');

@@ -7,6 +7,7 @@ import EmployeeManagement from './employeeManagement';
 import BackgroundApp from './backgroundApp';
 import Settings from './settings';
 import Timetable from './timetable';
+import AddEmployeeScreen from './addEmployeeScreen'; // יבוא המסך החדש
 
 const Stack = createStackNavigator();
 
@@ -38,14 +39,20 @@ export default function AppNavigator() {
               <Settings {...props} />
             </ScreenWrapper>
           )}
-          </Stack.Screen>
-          <Stack.Screen name="timetable">
-            {props => (
-              <ScreenWrapper>
-                <Timetable {...props} />
-              </ScreenWrapper>
-            )}
-  
+        </Stack.Screen>
+        <Stack.Screen name="timetable">
+          {props => (
+            <ScreenWrapper>
+              <Timetable {...props} />
+            </ScreenWrapper>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="addEmployee">
+          {props => (
+            <ScreenWrapper>
+              <AddEmployeeScreen {...props} />
+            </ScreenWrapper>
+          )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
