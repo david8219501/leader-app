@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const fetchUserData = async () => {
   try {
-    const response = await axios.get('http://192.168.41.43:5000/api/users/1'); 
+    const response = await axios.get('http://10.100.102.106:5000/api/users/1'); 
     return response.data.data;
   } catch (error) {
     console.error('Error fetching user data:', error);

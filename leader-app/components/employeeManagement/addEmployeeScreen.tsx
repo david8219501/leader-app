@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function AddEmployeeScreen({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -36,58 +37,63 @@ export default function AddEmployeeScreen({ navigation }) {
     }
 
     try {
-      await axios.post('http://192.168.41.43:5000/api/employees', {
+      await axios.post('http://10.100.102.106:5000/api/employees', {
         firstName,
         lastName,
         position,
         phoneNumber,
         email,
-      });
+      }, { timeout: 3000 });
       Alert.alert("עובד נוסף בהצלחה");
       navigation.goBack();
     } catch (error) {
       console.error('Error adding employee:', error);
-      Alert.alert('Error', 'Could not add employee');
+      Alert.alert('שגיאה', 'לא ניתן להוסיף עובד');
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.titlePage}>הוספת עובד חדש</Text>
-      <TextInput
-        placeholder="שם פרטי"
-        value={firstName}
-        onChangeText={setFirstName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="שם משפחה"
-        value={lastName}
-        onChangeText={setLastName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="תפקיד"
-        value={position}
-        onChangeText={setPosition}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="פלאפון"
-        value={phoneNumber}
-        onChangeText={setPhoneNumber}
-        style={styles.input}
-        keyboardType="numeric"
-      />
-      <TextInput
-        placeholder="מייל"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        keyboardType="email-address"
-      />
-      <Button title="הוסף עובד" onPress={handleAddEmployee} />
-    </View>
+    <ScrollView>
+      <View style={styles.container}>
+        <Text style={styles.titlePage}>הוספת עובד חדש</Text>
+        <TextInput
+          placeholder="שם פרטי"
+          value={firstName}
+          onChangeText={setFirstName}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="שם משפחה"
+          value={lastName}
+          onChangeText={setLastName}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="תפקיד"
+          value={position}
+          onChangeText={setPosition}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="פלאפון"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          style={styles.input}
+          keyboardType="numeric"
+        />
+        <TextInput
+          placeholder="מייל"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+          keyboardType="email-address"
+        />
+        <TouchableOpacity
+          onPress={() => handleAddEmployee()}>
+          <Text style={styles.buttonText}>הוספת עובד</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -97,6 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     color: 'white',
+    minWidth: '100%',
   },
   titlePage: {
     fontSize: 40,
@@ -117,5 +124,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
     textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#83bdff',
   },
+  buttonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    backgroundColor: '#0751a6',
+    padding: 15,
+    borderRadius: 10,
+    textAlign: 'center',
+    marginBottom: 12,
+  }
 });

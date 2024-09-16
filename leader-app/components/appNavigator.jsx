@@ -3,11 +3,12 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import WelcomePage from './welcomePage';
-import EmployeeManagement from './employeeManagement'; 
+import EmployeeManagement from './employeeManagement/employeeManagement'; 
 import BackgroundApp from './backgroundApp';
 import Settings from './settings';
 import Timetable from './timetable';
-import AddEmployeeScreen from './addEmployeeScreen'; // יבוא המסך החדש
+import AddEmployeeScreen from './employeeManagement/addEmployeeScreen';
+import EditEmployeeScreen from './employeeManagement/editEmployeeScreen';
 
 const Stack = createStackNavigator();
 
@@ -51,6 +52,13 @@ export default function AppNavigator() {
           {props => (
             <ScreenWrapper>
               <AddEmployeeScreen {...props} />
+            </ScreenWrapper>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="editEmployee">
+          {props => (
+            <ScreenWrapper>
+              <EditEmployeeScreen {...props} />
             </ScreenWrapper>
           )}
         </Stack.Screen>

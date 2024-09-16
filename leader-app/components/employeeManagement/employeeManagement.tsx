@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import { useIsFocused } from '@react-navigation/native';
-import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 interface Employee {
   id: number;
@@ -17,17 +17,17 @@ export default function EmployeeManagement({ navigation }) {
   const [employeeData, setEmployeeData] = useState<Employee[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const isFocused = useIsFocused(); // Hook to check if screen is focused
+  const isFocused = useIsFocused();
 
   const fetchEmployeeData = async () => {
     try {
-      const response = await axios.get('http://192.168.41.43:5000/api/employees');
+      const response = await axios.get('http://10.100.102.106:5000/api/employees');
       const sortedData = response.data.data.sort((a: Employee, b: Employee) => {
         return a.firstName.localeCompare(b.firstName);
       });
       setEmployeeData(sortedData); 
     } catch (error) {
-      console.error('Error fetching employee data:', error);
+      console.error('שגיאה באחזור נתוני עובדים:', error);
       Alert.alert('שגיאה', 'לא הצלחנו לטעון את נתוני העובדים.');
     } finally {
       setLoading(false); 
@@ -36,7 +36,7 @@ export default function EmployeeManagement({ navigation }) {
 
   useEffect(() => {
     if (isFocused) {
-      setLoading(true); // Ensure loading is shown each time the screen is focused
+      setLoading(true);
       fetchEmployeeData();
     }
   }, [isFocused]);
@@ -59,43 +59,25 @@ export default function EmployeeManagement({ navigation }) {
 
   const deleteItem = async (id: number) => {
     try {
-      await axios.delete(`http://192.168.41.43:5000/api/employees/${id}`);
+      await axios.delete(`http://10.100.102.106:5000/api/employees/${id}`, { timeout: 3000 });
       setEmployeeData(employeeData.filter(item => item.id !== id));
     } catch (error) {
       console.error('שגיאה במחיקת עובד:', error);
       Alert.alert('שגיאה', 'לא הצלחנו למחוק את העובד.');
     }
   };
-
+  
   const handleLongPressImage = (id: number) => {
     Alert.alert(
-      'בפיתוח אפשרות הוספת תמונה'
-      // 'בחר פעולה',
-      // 'בחר אם להוסיף תמונה מהגלריה או לצלם חדשה',
-    //   [
-    //     {
-    //       text: 'גלריה',
-    //       onPress: () => launchImageLibrary({ mediaType: 'photo' }, (response) => {
-    //         if (response.assets) {
-    //           const uri = response.assets[0].uri;
-    //           // כאן תוכל להוסיף את הקוד להעלאת התמונה לשרת או לעדכן את פרטי העובד
-    //           console.log(`תמונה נבחרה מהגלריה: ${uri}`);
-    //         }
-    //       }),
-    //     },
-    //     {
-    //       text: 'מצלמה',
-    //       onPress: () => launchCamera({ mediaType: 'photo' }, (response) => {
-    //         if (response.assets) {
-    //           const uri = response.assets[0].uri;
-    //           // כאן תוכל להוסיף את הקוד להעלאת התמונה לשרת או לעדכן את פרטי העובד
-    //           console.log(`תמונה צולמה: ${uri}`);
-    //         }
-    //       }),
-    //     },
-    //     { text: 'ביטול', style: 'cancel' },
-    //   ],
-    //   { cancelable: true }
+      'בקרוב!!!',
+      'הוספת אפשרות העלעת תמונה',
+      [
+        {
+          text: 'אישור',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
     );
   };
 
@@ -106,7 +88,15 @@ export default function EmployeeManagement({ navigation }) {
         onLongPress={() => handleLongPressLine(item.id)}
         style={styles.row}
       >
-        <Text style={styles.arrow}>{expandedId === item.id ? '▲' : '▼'}</Text>
+        <View style={styles.containerIcons}>
+          <Text style={styles.arrow}>{expandedId === item.id ? '▲' : '▼'}</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('editEmployee', { employee: item })}
+            style={styles.editButton}
+          >
+            <Icon name="edit" size={24} color="#20272e" />
+          </TouchableOpacity>
+        </View>
         <Text style={[
           styles.name,
           expandedId === item.id && styles.nameExpanded
@@ -115,7 +105,7 @@ export default function EmployeeManagement({ navigation }) {
           onLongPress={() => handleLongPressImage(item.id)}
         >
           <Image
-            source={require('../assets/employeePhoto.png')} 
+            source={require('../../assets/employeePhoto.png')} 
             style={styles.image}
           />
         </TouchableOpacity>
@@ -166,7 +156,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    color: 'white'
+    color: 'white',
   },
   titlePage: {
     fontSize: 40,
@@ -184,7 +174,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   itemContainer: {
-    width: 350,
+    width: 385,
     borderRadius: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'transparent',
@@ -196,6 +186,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 15,
+  },
+  containerIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 80,
+  },
+  editButton: {
+    padding: 10,
+    borderRadius: 5,
+    width: 45,
+    alignSelf: 'center',
   },
   name: {
     fontSize: 16,
