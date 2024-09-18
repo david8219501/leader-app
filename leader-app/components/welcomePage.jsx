@@ -2,14 +2,25 @@ import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'rea
 import React, { useState, useEffect } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
+import config from '../config.json';
 
 const fetchUserData = async () => {
   try {
-    const response = await axios.get('http://10.100.102.106:5000/api/users/1'); 
+    const response = await axios.get(`http://${config.data}/api/users/1`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching user data:', error);
     return null;
+  }
+};
+
+const checkIfUsersExist = async () => {
+  try {
+    const response = await axios.get(`http://${config.data}/api/users/check`);
+    return response.data.exists;
+  } catch (error) {
+    console.error('Error checking users:', error);
+    return false;
   }
 };
 
@@ -34,14 +45,19 @@ export default function WelcomePage({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
+    const initialize = async () => {
+      const usersExist = await checkIfUsersExist();
+      if (!usersExist) {
+        navigation.navigate('login');
+        return;
+      }
       const data = await fetchUserData();
       setUser(data);
       setLoading(false);
     };
 
-    loadData();
-  }, []);
+    initialize();
+  }, [navigation]);
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;

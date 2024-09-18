@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import axios from 'axios';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import config from '../../config.json';
 
 type RootStackParamList = {
   editEmployee: { employee: Employee };
@@ -55,7 +56,7 @@ export default function EditEmployeeScreen() {
     }
 
     try {
-      await axios.put(`http://10.100.102.106:5000/api/employees/${route.params.employee.id}`, {
+      await axios.put(`http://${config.data}/api/employees/${route.params.employee.id}`, {
         firstName,
         lastName,
         position,

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 import { ScrollView } from 'react-native-gesture-handler';
+import config from '../../config.json';
+
 
 export default function AddEmployeeScreen({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -37,7 +39,7 @@ export default function AddEmployeeScreen({ navigation }) {
     }
 
     try {
-      await axios.post('http://10.100.102.106:5000/api/employees', {
+      await axios.post(`http://${config.data}/api/employees`, {
         firstName,
         lastName,
         position,

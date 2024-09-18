@@ -9,13 +9,14 @@ import Settings from './settings';
 import Timetable from './timetable';
 import AddEmployeeScreen from './employeeManagement/addEmployeeScreen';
 import EditEmployeeScreen from './employeeManagement/editEmployeeScreen';
+import Login from './login';
 
 const Stack = createStackNavigator();
 
 function ScreenWrapper({ children }) {
   return <BackgroundApp>{children}</BackgroundApp>;
 }
-
+  
 export default function AppNavigator() {
   return (
     <NavigationContainer>
@@ -24,6 +25,13 @@ export default function AppNavigator() {
           {props => (
             <ScreenWrapper>
               <WelcomePage {...props} />
+            </ScreenWrapper>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="login">
+          {props => (
+            <ScreenWrapper>
+              <Login {...props} />
             </ScreenWrapper>
           )}
         </Stack.Screen>

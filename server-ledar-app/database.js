@@ -33,12 +33,36 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       lastName TEXT NOT NULL,
       position TEXT NOT NULL,
       phoneNumber TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE
+      email TEXT NOT NULL UNIQUE,
+      photo TEXT DEFAULT 'users_images/userDefultImg.png'
     )`, (err) => {
       if (err) {
         console.error(err.message);
       } else {
         console.log('Employees table created successfully.');
+
+        // Insert data into employees table
+        const employees = [
+          { firstName: 'יוסי', lastName: 'כהן', position: 'מנהל פרויקטים', phoneNumber: '050-1234567', email: 'yossi.cohen@example.com' },
+          { firstName: 'מיה', lastName: 'לוי', position: 'מפתח תוכנה', phoneNumber: '052-2345678', email: 'mya.levi@example.com' },
+          { firstName: 'אבי', lastName: 'פנחסי', position: 'מעצב גרפי', phoneNumber: '054-3456789', email: 'avi.phenhasi@example.com' },
+          // Other employees...
+        ];
+
+        const insertQuery = `
+          INSERT INTO employees (firstName, lastName, position, phoneNumber, email) 
+          VALUES (?, ?, ?, ?, ?)
+        `;
+
+        employees.forEach(employee => {
+          db.run(insertQuery, [employee.firstName, employee.lastName, employee.position, employee.phoneNumber, employee.email], (err) => {
+            if (err) {
+              console.error('Error inserting employee:', err.message);
+            }
+          });
+        });
+
+        console.log('Employees data inserted successfully.');
       }
     });
   }

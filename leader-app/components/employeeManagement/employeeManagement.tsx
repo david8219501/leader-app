@@ -3,6 +3,8 @@ import { StyleSheet, Text, View, Image, TouchableOpacity, FlatList, Alert, Activ
 import axios from 'axios';
 import { useIsFocused } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import * as ImagePicker from 'expo-image-picker';
+import config from '../../config.json';
 
 interface Employee {
   id: number;
@@ -21,7 +23,7 @@ export default function EmployeeManagement({ navigation }) {
 
   const fetchEmployeeData = async () => {
     try {
-      const response = await axios.get('http://10.100.102.106:5000/api/employees');
+      const response = await axios.get(`http://${config.data}/api/employees`);
       const sortedData = response.data.data.sort((a: Employee, b: Employee) => {
         return a.firstName.localeCompare(b.firstName);
       });
@@ -59,7 +61,7 @@ export default function EmployeeManagement({ navigation }) {
 
   const deleteItem = async (id: number) => {
     try {
-      await axios.delete(`http://10.100.102.106:5000/api/employees/${id}`, { timeout: 3000 });
+      await axios.delete(`http://${config.data}/api/employees/${id}`, { timeout: 3000 });
       setEmployeeData(employeeData.filter(item => item.id !== id));
     } catch (error) {
       console.error('שגיאה במחיקת עובד:', error);
@@ -67,18 +69,26 @@ export default function EmployeeManagement({ navigation }) {
     }
   };
   
-  const handleLongPressImage = (id: number) => {
-    Alert.alert(
-      'בקרוב!!!',
-      'הוספת אפשרות העלעת תמונה',
-      [
-        {
-          text: 'אישור',
-          style: 'cancel',
-        },
-      ],
-      { cancelable: true }
-    );
+  const handleLongPressImage = async (id: number) => {
+    // בקשת הרשאות
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert('שגיאה', 'אין לך הרשאות לגשת למערכת התמונות.');
+      return;
+    }
+
+    // בחירת תמונה
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!pickerResult.canceled) {
+      console.log(pickerResult.assets[0].uri);
+    }
   };
 
   const renderItem = useCallback(({ item }: { item: Employee }) => (
