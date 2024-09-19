@@ -13,7 +13,6 @@ app.get('/', (req, res) => {
 
 // Check if there are any users and redirect to login if not
 app.get('/api/users/check', (req, res) => {
-  console.log('Received request for /api/users/check');
   const sql = 'SELECT COUNT(*) AS count FROM user';
 
   db.get(sql, [], (err, row) => {
@@ -21,16 +20,15 @@ app.get('/api/users/check', (req, res) => {
       console.error('Error checking users count:', err.message);
       res.status(500).json({ error: err.message });
     } else {
-      console.log('Users count:', row.count);
       if (row.count > 0) {
         res.json({ exists: true });
       } else {
-        res.json({ exists: false });
+        // Redirect to login page or provide a message indicating no users exist
+        res.status(404).json({ exists: false, message: 'No users found. Please log in.' });
       }
     }
   });
 });
-
 
 // Get all users
 app.get('/api/users', (req, res) => {
@@ -215,6 +213,7 @@ app.put('/api/employees/:id', (req, res) => {
     editedEmployee.email,
     employeeId
   ];
+  
 
   db.run(query, params, function (err) {
     if (err) {

@@ -23,6 +23,28 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         console.error(err.message);
       } else {
         console.log('User table created successfully.');
+
+        // Insert a sample user into the user table
+        const user = {
+          firstName: 'דוד',
+          lastName: 'מאור',
+          phoneNumber: '050-7654321',
+          email: 'david.maor@example.com',
+          password: 'password123'
+        };
+
+        const insertUserQuery = `
+          INSERT INTO user (firstName, lastName, phoneNumber, email, password) 
+          VALUES (?, ?, ?, ?, ?)
+        `;
+
+        db.run(insertUserQuery, [user.firstName, user.lastName, user.phoneNumber, user.email, user.password], (err) => {
+          if (err) {
+            console.error('Error inserting user:', err.message);
+          } else {
+            console.log('User data inserted successfully.');
+          }
+        });
       }
     });
 
