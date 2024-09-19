@@ -87,6 +87,119 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         console.log('Employees data inserted successfully.');
       }
     });
+
+    // Create the shifts table
+    db.run(`CREATE TABLE IF NOT EXISTS shifts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      shift_date DATE NOT NULL,
+      shift_type TEXT NOT NULL,
+      UNIQUE (shift_date, shift_type)
+    )`, (err) => {
+      if (err) {
+        console.error(err.message);
+      } else {
+        console.log('Shifts table created successfully.');
+
+        // Insert data into shifts table
+        const shifts = [
+          { "shift_date": "18-09-24", "shift_type": "בוקר" },
+          { "shift_date": "18-09-24", "shift_type": "צהריים" },
+          { "shift_date": "18-09-24", "shift_type": "ערב" },
+          { "shift_date": "19-09-24", "shift_type": "בוקר" },
+          { "shift_date": "19-09-24", "shift_type": "צהריים" },
+          { "shift_date": "19-09-24", "shift_type": "ערב" },
+          { "shift_date": "20-09-24", "shift_type": "בוקר" },
+          { "shift_date": "20-09-24", "shift_type": "צהריים" },
+          { "shift_date": "20-09-24", "shift_type": "ערב" },
+          { "shift_date": "21-09-24", "shift_type": "בוקר" },
+          { "shift_date": "21-09-24", "shift_type": "צהריים" },
+          { "shift_date": "21-09-24", "shift_type": "ערב" },
+          { "shift_date": "22-09-24", "shift_type": "בוקר" },
+          { "shift_date": "22-09-24", "shift_type": "צהריים" },
+          { "shift_date": "22-09-24", "shift_type": "ערב" }
+        ];
+
+        const insertShiftQuery = `
+          INSERT INTO shifts (shift_date, shift_type) 
+          VALUES (?, ?)
+        `;
+
+        shifts.forEach(shift => {
+          db.run(insertShiftQuery, [shift.shift_date, shift.shift_type], (err) => {
+            if (err) {
+              console.error('Error inserting shift:', err.message);
+            }
+          });
+        });
+
+        console.log('Shifts data inserted successfully.');
+      }
+    });
+  
+      // Create the shift_assignments table
+      db.run(`CREATE TABLE IF NOT EXISTS shift_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        shift_id INTEGER NOT NULL,
+        worker_id INTEGER NOT NULL,
+        worker_number INTEGER NOT NULL,
+        FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE,
+        FOREIGN KEY (worker_id) REFERENCES employees(id) ON DELETE CASCADE,
+        UNIQUE (shift_id, worker_number)
+      )`, (err) => {
+        if (err) {
+          console.error(err.message);
+        } else {
+          console.log('Shift Assignments table created successfully.');
+  
+          // Insert sample data into shift_assignments
+          const shiftAssignments = [
+            // משמרת בוקר 2024-09-18
+            { shift_id: 1, worker_id: 1, worker_number: 1 }, // עובד 1
+            { shift_id: 1, worker_id: 2, worker_number: 2 }, // עובד 2
+            { shift_id: 1, worker_id: 3, worker_number: 3 }, // עובד 3
+            
+            // משמרת צהריים 2024-09-18
+            { shift_id: 2, worker_id: 1, worker_number: 1 },
+            { shift_id: 2, worker_id: 2, worker_number: 2 },
+            { shift_id: 2, worker_id: 3, worker_number: 3 },
+  
+            // משמרת ערב 2024-09-18
+            { shift_id: 3, worker_id: 1, worker_number: 1 },
+            { shift_id: 3, worker_id: 2, worker_number: 2 },
+            { shift_id: 3, worker_id: 3, worker_number: 3 },
+  
+            // משמרת בוקר 2024-09-19
+            { shift_id: 4, worker_id: 1, worker_number: 1 },
+            { shift_id: 4, worker_id: 2, worker_number: 2 },
+            { shift_id: 4, worker_id: 3, worker_number: 3 },
+  
+            // משמרת צהריים 2024-09-19
+            { shift_id: 5, worker_id: 1, worker_number: 1 },
+            { shift_id: 5, worker_id: 2, worker_number: 2 },
+            { shift_id: 5, worker_id: 3, worker_number: 3 },
+  
+            // משמרת ערב 2024-09-19
+            { shift_id: 6, worker_id: 1, worker_number: 1 },
+            { shift_id: 6, worker_id: 2, worker_number: 2 },
+            { shift_id: 6, worker_id: 3, worker_number: 3 }
+          ];
+  
+          const insertShiftAssignmentQuery = `
+            INSERT INTO shift_assignments (shift_id, worker_id, worker_number)
+            VALUES (?, ?, ?)
+          `;
+  
+          shiftAssignments.forEach(assignment => {
+            db.run(insertShiftAssignmentQuery, [assignment.shift_id, assignment.worker_id, assignment.worker_number], (err) => {
+              if (err) {
+                console.error('Error inserting shift assignment:', err.message);
+              }
+            });
+          });
+  
+          console.log('Shift assignments data inserted successfully.');
+        }
+      });
   }
 });
 
