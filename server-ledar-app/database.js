@@ -88,53 +88,20 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       }
     });
 
-    // Create the shifts table
     db.run(`CREATE TABLE IF NOT EXISTS shifts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       shift_date DATE NOT NULL,
       shift_type TEXT NOT NULL,
+      shift_day TEXT NOT NULL,  -- הוספת עמודה עבור היום
       UNIQUE (shift_date, shift_type)
     )`, (err) => {
       if (err) {
         console.error(err.message);
       } else {
         console.log('Shifts table created successfully.');
-
-        // Insert data into shifts table
-        const shifts = [
-          { "shift_date": "18-09-24", "shift_type": "בוקר" },
-          { "shift_date": "18-09-24", "shift_type": "צהריים" },
-          { "shift_date": "18-09-24", "shift_type": "ערב" },
-          { "shift_date": "19-09-24", "shift_type": "בוקר" },
-          { "shift_date": "19-09-24", "shift_type": "צהריים" },
-          { "shift_date": "19-09-24", "shift_type": "ערב" },
-          { "shift_date": "20-09-24", "shift_type": "בוקר" },
-          { "shift_date": "20-09-24", "shift_type": "צהריים" },
-          { "shift_date": "20-09-24", "shift_type": "ערב" },
-          { "shift_date": "21-09-24", "shift_type": "בוקר" },
-          { "shift_date": "21-09-24", "shift_type": "צהריים" },
-          { "shift_date": "21-09-24", "shift_type": "ערב" },
-          { "shift_date": "22-09-24", "shift_type": "בוקר" },
-          { "shift_date": "22-09-24", "shift_type": "צהריים" },
-          { "shift_date": "22-09-24", "shift_type": "ערב" }
-        ];
-
-        const insertShiftQuery = `
-          INSERT INTO shifts (shift_date, shift_type) 
-          VALUES (?, ?)
-        `;
-
-        shifts.forEach(shift => {
-          db.run(insertShiftQuery, [shift.shift_date, shift.shift_type], (err) => {
-            if (err) {
-              console.error('Error inserting shift:', err.message);
-            }
-          });
-        });
-
-        console.log('Shifts data inserted successfully.');
       }
     });
+    
   
       // Create the shift_assignments table
       db.run(`CREATE TABLE IF NOT EXISTS shift_assignments (

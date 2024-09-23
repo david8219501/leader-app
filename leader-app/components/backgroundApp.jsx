@@ -5,7 +5,7 @@ export default function BackgroundApp({children}) {
   return (
     <View style={styles.background}>
       <Image
-        source={require('../assets/backrond.png')} 
+        source={require('../assets/backgrond.png')} 
         style={styles.backgroundImage}
       />
       <Image

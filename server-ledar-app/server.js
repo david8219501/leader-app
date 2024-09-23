@@ -23,7 +23,6 @@ app.get('/api/users/check', (req, res) => {
       if (row.count > 0) {
         res.json({ exists: true });
       } else {
-        // Redirect to login page or provide a message indicating no users exist
         res.status(404).json({ exists: false, message: 'No users found. Please log in.' });
       }
     }
@@ -213,7 +212,6 @@ app.put('/api/employees/:id', (req, res) => {
     editedEmployee.email,
     employeeId
   ];
-  
 
   db.run(query, params, function (err) {
     if (err) {
@@ -225,6 +223,184 @@ app.put('/api/employees/:id', (req, res) => {
   });
 });
 
-app.listen(5000, () => {
-  console.log('Server started on port 5000');
+// Get shifts with employees between two dates
+app.get('/api/shifts/', (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Please provide both startDate and endDate' });
+  }
+
+  const query = `
+    SELECT 
+      s.shift_date, 
+      s.shift_type, 
+      s.shift_day,  
+      e.firstName, 
+      e.lastName, 
+      sa.worker_number
+    FROM 
+      shifts s
+    JOIN 
+      shift_assignments sa ON s.id = sa.shift_id
+    JOIN 
+      employees e ON sa.worker_id = e.id
+    WHERE 
+      s.shift_date BETWEEN ? AND ?
+    ORDER BY 
+      s.shift_date, s.shift_type, e.lastName, e.firstName
+  `;
+
+  db.all(query, [startDate, endDate], (err, rows) => {
+    if (err) {
+      console.error('Error retrieving shifts with employees:', err.message);
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json({ data: rows });
+    }
+  });
+});
+
+app.post('/api/shifts/range', (req, res) => {
+  console.log('Received request:', req.body);
+
+  const { startDate, endDate } = req.body;
+
+  const parseDate = (dateString) => {
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return null;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // חודשים מתחילים מ-0
+    const year = parseInt(parts[2], 10);
+
+    // אם השנה היא בשתי ספרות, המרתה לארבע ספרות
+    const fullYear = year < 100 ? 2000 + year : year;
+
+    return new Date(Date.UTC(fullYear, month, day));
+  };
+
+  const start = parseDate(startDate);
+  const end = parseDate(endDate);
+
+  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    return res.status(400).json({ error: 'Invalid date range' });
+  }
+
+  const existingShiftsQuery = `
+    SELECT shift_date, shift_type 
+    FROM shifts 
+    WHERE shift_date BETWEEN ? AND ?
+  `;
+
+  db.all(existingShiftsQuery, [startDate, endDate], (err, rows) => {
+    if (err) {
+      console.error('Error checking existing shifts:', err.message);
+      return res.status(500).json({ error: 'Error checking existing shifts' });
+    }
+
+    const existingShifts = new Set(rows.map(shift => `${shift.shift_date}-${shift.shift_type}`));
+
+    const shiftsToInsert = [];
+    const shiftTypes = ['בוקר', 'צהריים', 'ערב'];
+
+    const getDayName = (date) => {
+      const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+      return days[date.getUTCDay()];
+    };
+
+    let currentDate = new Date(start);
+    while (currentDate <= end) {
+      const dayName = getDayName(currentDate);
+      shiftTypes.forEach(shiftType => {
+        const shiftIdentifier = `${currentDate.getUTCDate().toString().padStart(2, '0')}/${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}/${currentDate.getUTCFullYear().toString().slice(-2)}-${shiftType}`;
+        if (!existingShifts.has(shiftIdentifier)) {
+          shiftsToInsert.push({
+            date: `${currentDate.getUTCDate().toString().padStart(2, '0')}/${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}/${currentDate.getUTCFullYear().toString().slice(-2)}`,
+            type: shiftType,
+            day: dayName
+          });
+        }
+      });
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+
+    if (shiftsToInsert.length === 0) {
+      return res.status(200).json({ message: 'All shifts already exist, no new shifts to add.' });
+    }
+
+    const insertQuery = `
+      INSERT INTO shifts (shift_date, shift_type, shift_day) 
+      VALUES (?, ?, ?)
+    `;
+
+    const promises = shiftsToInsert.map(shift => {
+      return new Promise((resolve, reject) => {
+        db.run(insertQuery, [shift.date, shift.type, shift.day], function (err) {
+          if (err) {
+            console.error('Error inserting shift:', err.message);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    });
+
+    Promise.all(promises)
+      .then(() => {
+        res.status(201).json({ message: 'New shifts added successfully' });
+      })
+      .catch(err => {
+        console.error('Failed to add shifts:', err);
+        res.status(500).json({ error: 'Error adding shifts', details: err.message });
+      });
+  });
+});
+
+app.delete('/api/shifts/range', (req, res) => {
+  const { startDate, endDate } = req.body;
+
+  // Validate input
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start date and end date are required.' });
+  }
+
+  const fetchShiftIdsQuery = `
+    SELECT id FROM shifts WHERE shift_date BETWEEN ? AND ?
+  `;
+
+  db.all(fetchShiftIdsQuery, [startDate, endDate], (err, rows) => {
+    if (err) {
+      console.error('Failed to fetch shift IDs:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'No shifts found in the given date range.' });
+    }
+
+    const shiftIds = rows.map(row => row.id);
+    const placeholders = shiftIds.map(() => '?').join(', ');
+    const deleteAssignmentsQuery = `
+      DELETE FROM shift_assignments WHERE shift_id IN (${placeholders})
+    `;
+
+    db.run(deleteAssignmentsQuery, shiftIds, function(err) {
+      if (err) {
+        console.error('Error deleting shift assignments:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: `${this.changes} shift assignments deleted successfully.` });
+    });
+  });
+});
+
+
+
+
+
+// Start the server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
