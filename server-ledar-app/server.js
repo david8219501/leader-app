@@ -6,6 +6,8 @@ const db = require('./database.js'); // ודא שהקובץ database.js נמצא
 app.use(cors());
 app.use(express.json());
 
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 // Basic route
 app.get('/', (req, res) => {
   res.send('Server is running');
