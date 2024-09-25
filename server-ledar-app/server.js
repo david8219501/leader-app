@@ -2,6 +2,8 @@ const cors = require('cors');
 const express = require('express');
 const app = express();
 const db = require('./database.js'); // ודא שהקובץ database.js נמצא באותה תיקייה
+const path = require('path'); // ייבוא מודול path
+
 
 app.use(cors());
 app.use(express.json());
