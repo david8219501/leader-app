@@ -26,7 +26,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
 
         // Insert a sample user into the user table
         const user = {
-          firstName: 'דוד',
+          firstName: 'פייגי',
           lastName: 'מאור',
           phoneNumber: '050-7654321',
           email: 'david.maor@example.com',
@@ -99,6 +99,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         console.error(err.message);
       } else {
         console.log('Shifts table created successfully.');
+
       }
     });
     
@@ -120,35 +121,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
   
           // Insert sample data into shift_assignments
           const shiftAssignments = [
-            // משמרת בוקר 2024-09-18
-            { shift_id: 1, worker_id: 1, worker_number: 1 }, // עובד 1
-            { shift_id: 1, worker_id: 2, worker_number: 2 }, // עובד 2
-            { shift_id: 1, worker_id: 3, worker_number: 3 }, // עובד 3
-            
-            // משמרת צהריים 2024-09-18
-            { shift_id: 2, worker_id: 1, worker_number: 1 },
-            { shift_id: 2, worker_id: 2, worker_number: 2 },
-            { shift_id: 2, worker_id: 3, worker_number: 3 },
-  
-            // משמרת ערב 2024-09-18
-            { shift_id: 3, worker_id: 1, worker_number: 1 },
-            { shift_id: 3, worker_id: 2, worker_number: 2 },
-            { shift_id: 3, worker_id: 3, worker_number: 3 },
-  
-            // משמרת בוקר 2024-09-19
-            { shift_id: 4, worker_id: 1, worker_number: 1 },
-            { shift_id: 4, worker_id: 2, worker_number: 2 },
-            { shift_id: 4, worker_id: 3, worker_number: 3 },
-  
-            // משמרת צהריים 2024-09-19
-            { shift_id: 5, worker_id: 1, worker_number: 1 },
-            { shift_id: 5, worker_id: 2, worker_number: 2 },
-            { shift_id: 5, worker_id: 3, worker_number: 3 },
-  
-            // משמרת ערב 2024-09-19
-            { shift_id: 6, worker_id: 1, worker_number: 1 },
-            { shift_id: 6, worker_id: 2, worker_number: 2 },
-            { shift_id: 6, worker_id: 3, worker_number: 3 }
+
           ];
   
           const insertShiftAssignmentQuery = `
