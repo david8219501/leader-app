@@ -158,30 +158,54 @@ app.get('/api/employees', (req, res) => {
 });
 
 // Create a new employee
-app.post('/api/employees', (req, res) => {
-  const newEmployee = req.body;
+// Update an employee
+app.put('/api/employees/:id', (req, res) => {
+  const employeeId = req.params.id;
+  const editedEmployee = req.body;
 
-  const position = newEmployee.position || 'עובדת'; // אם לא הוכנס position, השתמש בערך 'עובדת'
-
-  const query = `
-    INSERT INTO employees (firstName, lastName, position, phoneNumber, email) 
-    VALUES (?, ?, ?, ?, ?)
-  `;
-  const params = [
-    newEmployee.firstName,
-    newEmployee.lastName,
-    position, // שימוש בערך position מהבקשה או בערך דיפולטיבי
-    newEmployee.phoneNumber,
-    newEmployee.email
-  ];
-
-  db.run(query, params, function (err) {
+  // בדיקה אם יש משתמש אחר עם אותו מייל לפני עדכון המשתמש
+  const checkEmailQuery = 'SELECT * FROM employees WHERE email = ? AND id != ?';
+  db.get(checkEmailQuery, [editedEmployee.email, employeeId], (err, row) => {
     if (err) {
-      console.error('Error creating employee:', err.message);
-      res.status(500).json({ error: err.message });
-    } else {
-      res.status(201).json({ message: 'New employee added successfully', id: this.lastID });
+      console.error('Error checking email:', err.message);
+      return res.status(500).json({ error: 'Error checking email' });
     }
+
+    if (row) {
+      // אם מצאנו משתמש אחר עם אותו מייל, מחזירים שגיאה
+      return res.status(400).json({ error: 'Email already exists for another employee' });
+    }
+
+    // עדכון המשתמש אם לא נמצא משתמש עם אותו מייל
+    const position = editedEmployee.position || 'עובדת'; // ברירת מחדל ל"עובדת" אם לא הוכנס position
+
+    const query = `
+      UPDATE employees
+      SET 
+        firstName = ?,
+        lastName = ?,
+        position = ?,  
+        phoneNumber = ?,
+        email = ?
+      WHERE id = ?
+    `;
+    const params = [
+      editedEmployee.firstName,
+      editedEmployee.lastName,
+      position,
+      editedEmployee.phoneNumber,
+      editedEmployee.email,
+      employeeId
+    ];
+
+    db.run(query, params, function (err) {
+      if (err) {
+        console.error('Error updating employee:', err.message);
+        res.status(500).json({ error: err.message });
+      } else {
+        res.json({ message: 'Employee updated successfully', rowsAffected: this.changes });
+      }
+    });
   });
 });
 
