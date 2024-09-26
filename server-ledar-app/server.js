@@ -1,13 +1,13 @@
 const cors = require('cors');
 const express = require('express');
 const app = express();
-const db = require('./database.js'); // Ensure the database.js file is in the same folder
-const path = require('path'); // Import the path module
+const db = require('./database.js'); // ודא שהקובץ database.js נמצא באותה תיקייה
+const path = require('path'); // ייבוא מודול path
+
 
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the 'images' directory
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Basic route
@@ -274,10 +274,10 @@ app.post('/api/shifts/range', (req, res) => {
     const parts = dateString.split('/');
     if (parts.length !== 3) return null;
     const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Months are zero-indexed
+    const month = parseInt(parts[1], 10) - 1; // חודשים מתחילים מ-0
     const year = parseInt(parts[2], 10);
 
-    // Convert two-digit years to four digits
+    // אם השנה היא בשתי ספרות, המרתה לארבע ספרות
     const fullYear = year < 100 ? 2000 + year : year;
 
     return new Date(Date.UTC(fullYear, month, day));
@@ -290,38 +290,196 @@ app.post('/api/shifts/range', (req, res) => {
     return res.status(400).json({ error: 'Invalid date range' });
   }
 
-  const query = `
-    SELECT 
-      s.shift_date, 
-      s.shift_type, 
-      s.shift_day, 
-      e.firstName, 
-      e.lastName, 
-      sa.worker_number 
-    FROM 
-      shifts s 
-    JOIN 
-      shift_assignments sa ON s.id = sa.shift_id 
-    JOIN 
-      employees e ON sa.worker_id = e.id 
-    WHERE 
-      s.shift_date BETWEEN ? AND ? 
-    ORDER BY 
-      s.shift_date, s.shift_type, e.lastName, e.firstName
+  const existingShiftsQuery = `
+    SELECT shift_date, shift_type 
+    FROM shifts 
+    WHERE shift_date BETWEEN ? AND ?
   `;
 
-  db.all(query, [start.toISOString(), end.toISOString()], (err, rows) => {
+  db.all(existingShiftsQuery, [startDate, endDate], (err, rows) => {
     if (err) {
-      console.error('Error retrieving shifts in range:', err.message);
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json({ data: rows });
+      console.error('Error checking existing shifts:', err.message);
+      return res.status(500).json({ error: 'Error checking existing shifts' });
     }
+
+    const existingShifts = new Set(rows.map(shift => `${shift.shift_date}-${shift.shift_type}`));
+
+    const shiftsToInsert = [];
+    const shiftTypes = ['בוקר', 'צהריים', 'ערב'];
+
+    const getDayName = (date) => {
+      const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+      return days[date.getUTCDay()];
+    };
+
+    let currentDate = new Date(start);
+    while (currentDate <= end) {
+      const dayName = getDayName(currentDate);
+      shiftTypes.forEach(shiftType => {
+        const shiftIdentifier = `${currentDate.getUTCDate().toString().padStart(2, '0')}/${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}/${currentDate.getUTCFullYear().toString().slice(-2)}-${shiftType}`;
+        if (!existingShifts.has(shiftIdentifier)) {
+          shiftsToInsert.push({
+            date: `${currentDate.getUTCDate().toString().padStart(2, '0')}/${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}/${currentDate.getUTCFullYear().toString().slice(-2)}`,
+            type: shiftType,
+            day: dayName
+          });
+        }
+      });
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+
+    if (shiftsToInsert.length === 0) {
+      return res.status(200).json({ message: 'All shifts already exist, no new shifts to add.' });
+    }
+
+    const insertQuery = `
+      INSERT INTO shifts (shift_date, shift_type, shift_day) 
+      VALUES (?, ?, ?)
+    `;
+
+    const promises = shiftsToInsert.map(shift => {
+      return new Promise((resolve, reject) => {
+        db.run(insertQuery, [shift.date, shift.type, shift.day], function (err) {
+          if (err) {
+            console.error('Error inserting shift:', err.message);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    });
+
+    Promise.all(promises)
+      .then(() => {
+        res.status(201).json({ message: 'New shifts added successfully' });
+      })
+      .catch(err => {
+        console.error('Failed to add shifts:', err);
+        res.status(500).json({ error: 'Error adding shifts', details: err.message });
+      });
   });
 });
 
+app.delete('/api/shifts/range', (req, res) => {
+  const { startDate, endDate } = req.body;
+
+  // Validate input
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start date and end date are required.' });
+  }
+
+  const fetchShiftIdsQuery = `
+    SELECT id FROM shifts WHERE shift_date BETWEEN ? AND ?
+  `;
+
+  db.all(fetchShiftIdsQuery, [startDate, endDate], (err, rows) => {
+    if (err) {
+      console.error('Failed to fetch shift IDs:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (rows.length === 0) {
+      return res.json({ message: 'No shifts found in the given date range.' });
+    }
+    
+    const shiftIds = rows.map(row => row.id);
+    const placeholders = shiftIds.map(() => '?').join(', ');
+    const deleteAssignmentsQuery = `
+      DELETE FROM shift_assignments WHERE shift_id IN (${placeholders})
+    `;
+
+    db.run(deleteAssignmentsQuery, shiftIds, function(err) {
+      if (err) {
+        console.error('Error deleting shift assignments:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: `${this.changes} shift assignments deleted successfully.` });
+    });
+  });
+});
+
+
+
+
+app.post('/api/shifts/assign', (req, res) => {
+  const assignments = req.body;
+  console.log('Received assignments:', assignments);
+
+  const processedAssignments = [];
+  let errorOccurred = false;
+
+  assignments.forEach(([index, firstName, lastName, shiftType, date]) => {
+    // השאילתא לחיפוש מזהה המשמרת
+    const getShiftIdQuery = `
+      SELECT id FROM shifts WHERE shift_date = ? AND shift_type = ?
+    `;
+
+    db.get(getShiftIdQuery, [date, shiftType], (err, shiftRow) => {
+      if (err) {
+        console.error('Error fetching shift ID:', err.message);
+        errorOccurred = true;
+        return;
+      }
+      if (!shiftRow) {
+        console.error(`Shift not found for date: ${date} and type: ${shiftType}`);
+        return; // המשך לולאת ה-forEach
+      }
+      console.log('Found shift:', shiftRow);
+
+      // השאילתא לחיפוש מזהה העובד
+      const getWorkerIdQuery = `
+        SELECT id FROM employees WHERE firstName = ? AND lastName = ?
+      `;
+
+      db.get(getWorkerIdQuery, [firstName, lastName], (err, workerRow) => {
+        if (err) {
+          console.error('Error fetching worker ID:', err.message);
+          errorOccurred = true;
+          return;
+        }
+        if (!workerRow) {
+          console.error(`Worker not found for name: ${firstName} ${lastName}`);
+          return; // המשך לולאת ה-forEach
+        }
+        console.log('Found worker:', workerRow);
+
+        const shiftId = shiftRow.id;
+        const workerId = workerRow.id;
+
+        // השאילתא להוספת הקצאת המשמרת
+        const insertAssignmentQuery = `
+          INSERT INTO shift_assignments (shift_id, worker_id, worker_number) 
+          VALUES (?, ?, ?)
+        `;
+
+        db.run(insertAssignmentQuery, [shiftId, workerId, index], function(err) {
+          if (err) {
+            console.error('Error inserting shift assignment:', err.message);
+            errorOccurred = true;
+            return;
+          }
+
+          processedAssignments.push({ shiftId, workerId, workerNumber: index });
+        });
+      });
+    });
+  });
+
+  // קובעים עיכוב כדי לוודא שהכל התבצע
+  setTimeout(() => {
+    if (errorOccurred) {
+      return res.status(500).json({ error: 'An error occurred while processing assignments.' });
+    }
+
+    res.status(201).json({ message: 'Shift assignments processed', assignments: processedAssignments });
+  }, 100);
+});
+
+
+
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
