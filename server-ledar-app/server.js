@@ -163,6 +163,47 @@ app.get('/api/employees', (req, res) => {
 });
 
 // Create a new employee
+  app.post('/api/employees', (req, res) => {
+  const newEmployee = req.body;
+
+  // בדיקה אם המייל כבר קיים
+  const checkEmailQuery = 'SELECT * FROM employees WHERE email = ?';
+  db.get(checkEmailQuery, [newEmployee.email], (err, row) => {
+    if (err) {
+      console.error('Error checking email:', err.message);
+      return res.status(500).json({ error: 'Error checking email' });
+    }
+
+    if (row) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    // אם המייל לא קיים, המשך עם ההכנסה
+    const position = newEmployee.position || 'עובדת';
+    const query = `
+      INSERT INTO employees (firstName, lastName, position, phoneNumber, email) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const params = [
+      newEmployee.firstName,
+      newEmployee.lastName,
+      position,
+      newEmployee.phoneNumber,
+      newEmployee.email
+    ];
+
+    db.run(query, params, function (err) {
+      if (err) {
+        console.error('Error creating employee:', err.message);
+        res.status(500).json({ error: err.message });
+      } else {
+        res.status(201).json({ message: 'New employee added successfully', id: this.lastID });
+      }
+    });
+  });
+});
+
+
 // Update an employee
 app.put('/api/employees/:id', (req, res) => {
   const employeeId = req.params.id;
