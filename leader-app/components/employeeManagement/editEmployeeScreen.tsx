@@ -56,13 +56,17 @@ export default function EditEmployeeScreen() {
     }
 
     try {
-      await axios.put(`http://${config.data}/api/employees/${route.params.employee.id}`, {
-        firstName,
-        lastName,
-        position,
-        phoneNumber,
-        email,
-      }, { timeout: 3000 });
+      // הסרת רווחים מיותרים בשמות ובפרטים
+      const employeeData = {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          position: position.trim(),
+          phoneNumber: phoneNumber.trim(),
+          email: email.trim(),
+      };
+  
+      await axios.post(`http://${config.data}/api/employees`, employeeData, { timeout: 3000 });
+  
       Alert.alert("העובד עודכן בהצלחה");
       navigation.goBack();
     } catch (error) {

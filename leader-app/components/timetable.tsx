@@ -42,27 +42,27 @@ const Timetable = () => {
 
   function sendShiftAssignment(shiftData) {
     fetch(`http://${config.data}/api/shifts/assign`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(shiftData) // שליחת shiftData ולא assignments
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shiftData) // שליחת shiftData
     })
-      .then(response => {
+    .then(response => {
         if (!response.ok) {
-          // אם התגובה לא תקינה, זריקת שגיאה
-          throw new Error(`HTTP error! status: ${response.status}`);
+            // אם התגובה לא תקינה, זריקת שגיאה
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json(); // ניתוח JSON
-      })
-      .then(data => {
+    })
+    .then(data => {
         console.log('Success:', data);
-      })
-      .catch((error) => {
+    })
+    .catch((error) => {
         console.error('Error:', error);
-      });
-  }
-  
+    });
+}
+
 
   const sendShiftRangeQuery = async (startDate: string, endDate: string) => {
     try {
@@ -169,7 +169,9 @@ const Timetable = () => {
     }));
   };
 
-  const handleSaveAndShare = () => {
+  const handleSaveAndShare = async () => {
+    const { startOfWeek, endOfWeek } = getWeekBoundaries(currentWeek);
+    await deleteShiftAssignmentsInRange(startOfWeek, endOfWeek);
     const allSelectedData = [];
     
     weekDates.forEach((day, dayIndex) => {
@@ -198,7 +200,6 @@ const Timetable = () => {
   
     console.log(allSelectedData);
     sendShiftAssignment(allSelectedData);
-    const { startOfWeek, endOfWeek } = getWeekBoundaries(currentWeek);
     generatePDF(startOfWeek, allSelectedData);
   };
   

@@ -47,33 +47,31 @@ export default function Login({ navigation }) {
     }
 
     try {
-      // שלח את הנתונים לשרת כדי להוסיף את העובד
-      await axios.post(`${config.data}/api/employees`, {
-        firstName,
-        lastName,
-        position: "מנהלת",
-        phoneNumber,
-        email,
-      }, { timeout: 3000 });
-
       // שלח את הנתונים לשרת כדי להוסיף את המשתמש
+      const trimmedFirstName = firstName.trim();
+      const trimmedLastName = lastName.trim();
+      const trimmedPhoneNumber = phoneNumber.trim();
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim(); // הסרת רווחים גם מהסיסמה
+  
       await axios.post(`http://${config.data}/api/users`, {
-        firstName,
-        lastName,
-        phoneNumber,
-        email,
-        password,
-        is_connected: true,
+          firstName: trimmedFirstName,
+          lastName: trimmedLastName,
+          phoneNumber: trimmedPhoneNumber,
+          email: trimmedEmail,
+          password: trimmedPassword,
+          is_connected: true,
       }, { timeout: 3000 });
-
+  
       navigation.reset({
-        index: 0,
-        routes: [{ name: 'Welcome' }],
+          index: 0,
+          routes: [{ name: 'Welcome' }],
       });
-    } catch (error) {
+  } catch (error) {
       console.error('Error:', error);
       Alert.alert('שגיאה', 'לא ניתן להוסיף את הנתונים');
-    }
+  }
+  
   };
 
   return (

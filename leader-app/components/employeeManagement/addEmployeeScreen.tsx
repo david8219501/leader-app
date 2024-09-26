@@ -39,20 +39,29 @@ export default function AddEmployeeScreen({ navigation }) {
     }
 
     try {
+      // הסרת רווחים מיותרים
+      const trimmedFirstName = firstName.trim();
+      const trimmedLastName = lastName.trim();
+      const trimmedPosition = position.trim();
+      const trimmedPhoneNumber = phoneNumber.trim();
+      const trimmedEmail = email.trim();
+  
       await axios.post(`http://${config.data}/api/employees`, {
-        firstName,
-        lastName,
-        position,
-        phoneNumber,
-        email,
+          firstName: trimmedFirstName,
+          lastName: trimmedLastName,
+          position: trimmedPosition,
+          phoneNumber: trimmedPhoneNumber,
+          email: trimmedEmail,
       }, { timeout: 3000 });
+  
       Alert.alert("עובד נוסף בהצלחה");
       navigation.goBack();
-    } catch (error) {
-      console.error('Error adding employee:', error);
-      Alert.alert('שגיאה', 'לא ניתן להוסיף עובד');
-    }
+      } catch (error) {
+          console.error('Error adding employee:', error);
+          Alert.alert('שגיאה', 'לא ניתן להוסיף עובד');
+      }
   };
+  
 
   return (
     <ScrollView>
