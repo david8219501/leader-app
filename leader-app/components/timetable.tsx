@@ -27,11 +27,28 @@ const Timetable = () => {
   const fetchEmployeeData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://${config.data}/api/employees`);
-      const sortedData = response.data.data.sort((a: Employee, b: Employee) => {
+      // קריאה ל-API של העובדים
+      const employeeResponse = await axios.get(`http://${config.data}/api/employees`);
+      const employeeData = employeeResponse.data.data;
+      console.log(employeeData);  
+  
+      // קריאה ל-API של משתמש ספציפי (למשל, עם ID 1)
+      const userResponse = await axios.get(`http://${config.data}/api/users/1`);
+      const userData = userResponse.data.data; // הנח שיש שדה 'data' בתגובה
+      console.log(userResponse);  
+  
+      // מיון נתוני העובדים לפי שם פרטי
+      const sortedData = employeeData.sort((a: Employee, b: Employee) => {
         return a.firstName.localeCompare(b.firstName);
       });
-      setEmployeeData(sortedData);
+  
+      // שלב נתוני עובדים עם המידע על המשתמש
+      const combinedData = sortedData.map(employee => ({
+        ...employee,
+        user: userData || null // הוספת מידע על המשתמש
+      }));
+      console.log(combinedData);
+      setEmployeeData(combinedData);
     } catch (error) {
       console.error('Error fetching employee data:', error);
       Alert.alert('Error', 'Failed to load employee data.');
@@ -39,7 +56,8 @@ const Timetable = () => {
       setLoading(false);
     }
   };
-
+  
+  
   function sendShiftAssignment(shiftData) {
     fetch(`http://${config.data}/api/shifts/assign`, {
         method: 'POST',
@@ -204,27 +222,35 @@ const Timetable = () => {
   };
   
   
-  const renderPickerForShift = (day, timeOfDay) => (
-    <View style={styles.pickerContainer}>
-      {[1, 2, 3].map((index) => (
-        <Picker
-          key={index}
-          selectedValue={selectedEmployees[day]?.[timeOfDay]?.[index] || ''}
-          onValueChange={(itemValue) => handleEmployeeChange(day, timeOfDay, index, itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="בחר עובד" value="" />
-          {employeeData.map((employee) => (
-            <Picker.Item
-              key={employee.id}
-              label={`${employee.firstName} ${employee.lastName}`}
-              value={employee.id}
-            />
-          ))}
-        </Picker>
-      ))}
-    </View>
-  );
+  const renderPickerForShift = (day, timeOfDay) => {
+    console.log("Employee Data:", employeeData); // דיאגנוסטיקה
+    return (
+      <View style={styles.pickerContainer}>
+        {[1, 2, 3].map((index) => (
+          <Picker
+            key={index}
+            selectedValue={selectedEmployees[day]?.[timeOfDay]?.[index] || ''}
+            onValueChange={(itemValue) => handleEmployeeChange(day, timeOfDay, index, itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="בחר עובד" value="" />
+            {employeeData.length > 0 ? (
+              employeeData.map((employee) => (
+                <Picker.Item
+                  key={employee.id}
+                  label={`${employee.firstName} ${employee.lastName}`} // ודא שהשדות נכונים
+                  value={employee.id} // ודא שזה מזהה ייחודי
+                />
+              ))
+            ) : (
+              <Picker.Item label="אין עובדים זמינים" value="" />
+            )}
+          </Picker>
+        ))}
+      </View>
+    );
+  };
+  
 
   return (
     <ScrollView style={styles.container}>

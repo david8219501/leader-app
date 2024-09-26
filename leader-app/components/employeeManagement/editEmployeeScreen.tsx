@@ -40,7 +40,7 @@ export default function EditEmployeeScreen() {
   };
 
   const handleUpdateEmployee = async () => {
-    if (!firstName || !lastName || !position || !phoneNumber || !email) {
+    if (!firstName || !lastName || !phoneNumber || !email) {
       Alert.alert('שגיאה', 'יש למלא את כל השדות.');
       return;
     }
@@ -58,15 +58,16 @@ export default function EditEmployeeScreen() {
     try {
       // הסרת רווחים מיותרים בשמות ובפרטים
       const employeeData = {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          position: position.trim(),
-          phoneNumber: phoneNumber.trim(),
-          email: email.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        position: position.trim(),
+        phoneNumber: phoneNumber.trim(),
+        email: email.trim(),
       };
-  
-      await axios.post(`http://${config.data}/api/employees`, employeeData, { timeout: 3000 });
-  
+
+      // שליחת בקשה לעדכון העובד לפי ID
+      await axios.put(`http://${config.data}/api/employees/${route.params.employee.id}`, employeeData, { timeout: 3000 });
+
       Alert.alert("העובד עודכן בהצלחה");
       navigation.goBack();
     } catch (error) {
@@ -89,12 +90,6 @@ export default function EditEmployeeScreen() {
           placeholder="שם משפחה"
           value={lastName}
           onChangeText={setLastName}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="תפקיד"
-          value={position}
-          onChangeText={setPosition}
           style={styles.input}
         />
         <TextInput

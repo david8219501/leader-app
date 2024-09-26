@@ -47,7 +47,12 @@ export default function EmployeeManagement({ navigation }) {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleLongPressLine = (id: number) => {
+  const handleLongPressLine = (id: number, position) => {
+    if (position == "מנהלת")
+      Alert.alert(
+        "אין אפשרות למחוק מנהלת מרשימת העובדות"
+      );
+    else(
     Alert.alert(
       "מחק אובייקט",
       "האם אתה בטוח שברצונך למחוק את האובייקט?",
@@ -56,8 +61,17 @@ export default function EmployeeManagement({ navigation }) {
         { text: "כן", onPress: () => deleteItem(id) }
       ],
       { cancelable: true }
-    );
+    ));
   };
+
+  const saveEditButton = (employee) => {
+    if (employee.position == "מנהלת")
+      Alert.alert(
+        "אין אפשרות לערוך מנהלת מרשימת העובדות");
+    else(
+      navigation.navigate('editEmployee', {  employee }
+    ));
+  }
 
   const deleteItem = async (id: number) => {
     try {
@@ -95,14 +109,13 @@ export default function EmployeeManagement({ navigation }) {
     <View style={styles.itemContainer}>
       <TouchableOpacity
         onPress={() => handlePress(item.id)}
-        onLongPress={() => handleLongPressLine(item.id)}
+        onLongPress={() => handleLongPressLine(item.id, item.position)}
         style={styles.row}
       >
         <View style={styles.containerIcons}>
           <Text style={styles.arrow}>{expandedId === item.id ? '▲' : '▼'}</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('editEmployee', { employee: item })}
-            style={styles.editButton}
+            onPress={() => saveEditButton(item)}
           >
             <Icon name="edit" size={24} color="#20272e" />
           </TouchableOpacity>

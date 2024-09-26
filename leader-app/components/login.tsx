@@ -53,6 +53,14 @@ export default function Login({ navigation }) {
       const trimmedPhoneNumber = phoneNumber.trim();
       const trimmedEmail = email.trim();
       const trimmedPassword = password.trim(); // הסרת רווחים גם מהסיסמה
+
+      await axios.post(`http://${config.data}/api/employees`, {
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        position: "מנהלת",
+        phoneNumber: trimmedPhoneNumber,
+        email: trimmedEmail,
+    }, { timeout: 3000 });
   
       await axios.post(`http://${config.data}/api/users`, {
           firstName: trimmedFirstName,
@@ -62,7 +70,7 @@ export default function Login({ navigation }) {
           password: trimmedPassword,
           is_connected: true,
       }, { timeout: 3000 });
-  
+    
       navigation.reset({
           index: 0,
           routes: [{ name: 'Welcome' }],
@@ -73,6 +81,7 @@ export default function Login({ navigation }) {
   }
   
   };
+
 
   return (
     <ScrollView>

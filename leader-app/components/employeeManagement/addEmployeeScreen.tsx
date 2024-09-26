@@ -23,7 +23,7 @@ export default function AddEmployeeScreen({ navigation }) {
   };
 
   const handleAddEmployee = async () => {
-    if (!firstName || !lastName || !position || !phoneNumber || !email) {
+    if (!firstName || !lastName || !phoneNumber || !email) {
       Alert.alert('שגיאה', 'יש למלא את כל השדות.');
       return;
     }
@@ -49,7 +49,6 @@ export default function AddEmployeeScreen({ navigation }) {
       await axios.post(`http://${config.data}/api/employees`, {
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
-          position: trimmedPosition,
           phoneNumber: trimmedPhoneNumber,
           email: trimmedEmail,
       }, { timeout: 3000 });
@@ -77,12 +76,6 @@ export default function AddEmployeeScreen({ navigation }) {
           placeholder="שם משפחה"
           value={lastName}
           onChangeText={setLastName}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="תפקיד"
-          value={position}
-          onChangeText={setPosition}
           style={styles.input}
         />
         <TextInput

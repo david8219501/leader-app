@@ -17,12 +17,13 @@ const fetchUserData = async () => {
 const checkIfUsersExist = async () => {
   try {
     const response = await axios.get(`http://${config.data}/api/users/check`);
-    return response.data.exists;
+    return response.data.exists; // מחזירים את התוצאה מהשרת
   } catch (error) {
-    console.error('Error checking users:', error);
-    return false;
+    console.error('Error checking users:', error.message);
+    return false; // במקרה של שגיאה מחזירים false
   }
 };
+
 
 const getGreeting = (firstName) => {
   const currentHour = new Date().getHours();
