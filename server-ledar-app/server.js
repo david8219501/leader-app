@@ -406,73 +406,76 @@ app.post('/api/shifts/assign', (req, res) => {
   const assignments = req.body;
   console.log('Received assignments:', assignments);
 
+  // בדוק אם המערך ריק
+  if (!assignments || assignments.length === 0) {
+      // במקרה של מערך ריק, פשוט לא עושים כלום
+      return; // מחזירים תשובה ריקה
+  }
+
   const processedAssignments = [];
   let errorOccurred = false;
 
   assignments.forEach(([index, firstName, lastName, shiftType, date]) => {
-    // השאילתא לחיפוש מזהה המשמרת
-    const getShiftIdQuery = `
-      SELECT id FROM shifts WHERE shift_date = ? AND shift_type = ?
-    `;
-
-    db.get(getShiftIdQuery, [date, shiftType], (err, shiftRow) => {
-      if (err) {
-        console.error('Error fetching shift ID:', err.message);
-        errorOccurred = true;
-        return;
-      }
-      if (!shiftRow) {
-        console.error(`Shift not found for date: ${date} and type: ${shiftType}`);
-        return; // המשך לולאת ה-forEach
-      }
-      console.log('Found shift:', shiftRow);
-
-      // השאילתא לחיפוש מזהה העובד
-      const getWorkerIdQuery = `
-        SELECT id FROM employees WHERE firstName = ? AND lastName = ?
+      const getShiftIdQuery = `
+          SELECT id FROM shifts WHERE shift_date = ? AND shift_type = ?
       `;
 
-      db.get(getWorkerIdQuery, [firstName, lastName], (err, workerRow) => {
-        if (err) {
-          console.error('Error fetching worker ID:', err.message);
-          errorOccurred = true;
-          return;
-        }
-        if (!workerRow) {
-          console.error(`Worker not found for name: ${firstName} ${lastName}`);
-          return; // המשך לולאת ה-forEach
-        }
-        console.log('Found worker:', workerRow);
-
-        const shiftId = shiftRow.id;
-        const workerId = workerRow.id;
-
-        // השאילתא להוספת הקצאת המשמרת
-        const insertAssignmentQuery = `
-          INSERT INTO shift_assignments (shift_id, worker_id, worker_number) 
-          VALUES (?, ?, ?)
-        `;
-
-        db.run(insertAssignmentQuery, [shiftId, workerId, index], function(err) {
+      db.get(getShiftIdQuery, [date, shiftType], (err, shiftRow) => {
           if (err) {
-            console.error('Error inserting shift assignment:', err.message);
-            errorOccurred = true;
-            return;
+              console.error('Error fetching shift ID:', err.message);
+              errorOccurred = true;
+              return;
           }
+          if (!shiftRow) {
+              console.error(`Shift not found for date: ${date} and type: ${shiftType}`);
+              return; // המשך לולאת ה-forEach
+          }
+          console.log('Found shift:', shiftRow);
 
-          processedAssignments.push({ shiftId, workerId, workerNumber: index });
-        });
+          const getWorkerIdQuery = `
+              SELECT id FROM employees WHERE firstName = ? AND lastName = ?
+          `;
+
+          db.get(getWorkerIdQuery, [firstName, lastName], (err, workerRow) => {
+              if (err) {
+                  console.error('Error fetching worker ID:', err.message);
+                  errorOccurred = true;
+                  return;
+              }
+              if (!workerRow) {
+                  console.error(`Worker not found for name: ${firstName} ${lastName}`);
+                  return; // המשך לולאת ה-forEach
+              }
+              console.log('Found worker:', workerRow);
+
+              const shiftId = shiftRow.id;
+              const workerId = workerRow.id;
+
+              const insertAssignmentQuery = `
+                  INSERT INTO shift_assignments (shift_id, worker_id, worker_number) 
+                  VALUES (?, ?, ?)
+              `;
+
+              db.run(insertAssignmentQuery, [shiftId, workerId, index], function(err) {
+                  if (err) {
+                      console.error('Error inserting shift assignment:', err.message);
+                      errorOccurred = true;
+                      return;
+                  }
+
+                  processedAssignments.push({ shiftId, workerId, workerNumber: index });
+              });
+          });
       });
-    });
   });
 
   // קובעים עיכוב כדי לוודא שהכל התבצע
   setTimeout(() => {
-    if (errorOccurred) {
-      return res.status(500).json({ error: 'An error occurred while processing assignments.' });
-    }
+      if (errorOccurred) {
+          return res.status(500).json({ error: 'An error occurred while processing assignments.' });
+      }
 
-    res.status(201).json({ message: 'Shift assignments processed', assignments: processedAssignments });
+      res.status(201).json({ message: 'Shift assignments processed', assignments: processedAssignments });
   }, 100);
 });
 
