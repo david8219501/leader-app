@@ -65,9 +65,14 @@ app.get('/api/users/:id', (req, res) => {
   });
 });
 
-// Create a new user
 app.post('/api/users', (req, res) => {
   const newUser = req.body;
+
+  // Validate required fields
+  if (!newUser.firstName || !newUser.lastName || !newUser.phoneNumber || !newUser.email || !newUser.password) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+
   const query = `
     INSERT INTO user (firstName, lastName, position, phoneNumber, email, password, is_connected) 
     VALUES (?, ?, 'מנהלת', ?, ?, ?, ?)
