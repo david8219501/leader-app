@@ -16,22 +16,24 @@ app.get('/', (req, res) => {
 });
 
 // Check if there are any users and redirect to login if not
+// Check if there are any users and return true/false
+// Check if there are any users and return true/false
 app.get('/api/users/check', (req, res) => {
   const sql = 'SELECT COUNT(*) AS count FROM user';
 
   db.get(sql, [], (err, row) => {
     if (err) {
       console.error('Error checking users count:', err.message);
-      res.status(500).json({ error: err.message });
-    } else {
-      if (row.count > 0) {
-        res.json({ exists: true });
-      } else {
-        res.status(404).json({ exists: false, message: 'No users found. Please log in.' });
-      }
+      // במקרה של שגיאה, נחזיר false
+      return res.json({ exists: false });
     }
+
+    // מחזירים true אם יש משתמשים ו-false אם אין
+    res.json({ exists: row.count > 0 }); // true אם יש משתמשים, false אם אין
   });
 });
+
+
 
 // Get all users
 app.get('/api/users', (req, res) => {
@@ -67,8 +69,8 @@ app.get('/api/users/:id', (req, res) => {
 app.post('/api/users', (req, res) => {
   const newUser = req.body;
   const query = `
-    INSERT INTO user (firstName, lastName, phoneNumber, email, password, is_connected) 
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO user (firstName, lastName, position, phoneNumber, email, password, is_connected) 
+    VALUES (?, ?, 'מנהלת', ?, ?, ?, ?)
   `;
   const params = [
     newUser.firstName,
@@ -114,6 +116,7 @@ app.put('/api/users/:id', (req, res) => {
     SET 
       firstName = ?,
       lastName = ?,
+      position = 'מנהלת',  
       phoneNumber = ?,
       email = ?,
       password = ?,
@@ -140,6 +143,7 @@ app.put('/api/users/:id', (req, res) => {
   });
 });
 
+
 // Get all employees
 app.get('/api/employees', (req, res) => {
   const sql = 'SELECT * FROM employees';
@@ -156,6 +160,9 @@ app.get('/api/employees', (req, res) => {
 // Create a new employee
 app.post('/api/employees', (req, res) => {
   const newEmployee = req.body;
+
+  const position = newEmployee.position || 'עובדת'; // אם לא הוכנס position, השתמש בערך 'עובדת'
+
   const query = `
     INSERT INTO employees (firstName, lastName, position, phoneNumber, email) 
     VALUES (?, ?, ?, ?, ?)
@@ -163,7 +170,7 @@ app.post('/api/employees', (req, res) => {
   const params = [
     newEmployee.firstName,
     newEmployee.lastName,
-    newEmployee.position,
+    position, // שימוש בערך position מהבקשה או בערך דיפולטיבי
     newEmployee.phoneNumber,
     newEmployee.email
   ];
@@ -177,6 +184,7 @@ app.post('/api/employees', (req, res) => {
     }
   });
 });
+
 
 // Delete an employee
 app.delete('/api/employees/:id', (req, res) => {
@@ -198,12 +206,14 @@ app.put('/api/employees/:id', (req, res) => {
   const editedEmployee = req.body;
   const employeeId = req.params.id;
 
+  const position = editedEmployee.position || 'עובדת'; // אם לא הוכנס position, השתמש בערך 'עובדת'
+
   const query = `
     UPDATE employees
     SET 
       firstName = ?,
       lastName = ?,
-      position = ?,
+      position = ?,  
       phoneNumber = ?,
       email = ?
     WHERE id = ?
@@ -211,7 +221,7 @@ app.put('/api/employees/:id', (req, res) => {
   const params = [
     editedEmployee.firstName,
     editedEmployee.lastName,
-    editedEmployee.position,
+    position, 
     editedEmployee.phoneNumber,
     editedEmployee.email,
     employeeId
