@@ -48,7 +48,7 @@ export default function Login({ navigation }) {
 
     try {
       // שלח את הנתונים לשרת כדי להוסיף את העובד
-      await axios.post(`http://${config.data}/api/employees`, {
+      await axios.post(`${config.data}/api/employees`, {
         firstName,
         lastName,
         position: "מנהלת",

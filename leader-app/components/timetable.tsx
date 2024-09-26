@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions} from 'react-native';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import axios from 'axios';
@@ -7,6 +7,8 @@ import { useIsFocused } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import config from '../config.json';
 import { Shifts, Employee } from './interface';
+import generatePDF from './creatTable';
+
 
 dayjs.extend(weekOfYear);
 
@@ -167,33 +169,6 @@ const Timetable = () => {
     }));
   };
 
-  // const handleSaveAndShare = () => {
-  //   const allSelectedData = [];
-
-  //   hebrewDays.forEach((day, dayIndex) => {
-  //     ['morning', 'afternoon', 'evening'].forEach((timeOfDay) => {
-  //       for (let index = 0; index < 3; index++) {
-  //         const employeeId = selectedEmployees[day]?.[timeOfDay]?.[index];
-  //         const date = currentWeek.startOf('week').add(dayIndex, 'day').format('DD/MM/YY'); // הוספת התאריך של המשמרת
-
-  //         if (employeeId) {
-  //           const employee = employeeData.find(emp => emp.id === employeeId);
-  //           allSelectedData.push([
-  //             employee ? `${employee.firstName} ${employee.lastName}` : null,
-  //             day,
-  //             timeOfDay,
-  //             date // הוספת התאריך
-  //           ]);
-  //         } else {
-  //           allSelectedData.push([null, day, timeOfDay, date]); // הוספת התאריך גם במקרה של null
-  //         }
-  //       }
-  //     });
-  //   });
-
-  //   console.log(allSelectedData);
-  // };
-
   const handleSaveAndShare = () => {
     const allSelectedData = [];
     
@@ -222,9 +197,12 @@ const Timetable = () => {
     });
   
     console.log(allSelectedData);
-    sendShiftAssignment(allSelectedData)
+    sendShiftAssignment(allSelectedData);
+    const { startOfWeek, endOfWeek } = getWeekBoundaries(currentWeek);
+    generatePDF(startOfWeek, allSelectedData);
   };
-
+  
+  
   const renderPickerForShift = (day, timeOfDay) => (
     <View style={styles.pickerContainer}>
       {[1, 2, 3].map((index) => (

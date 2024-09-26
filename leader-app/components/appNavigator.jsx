@@ -9,6 +9,7 @@ import Settings from './settings';
 import Timetable from './timetable';
 import AddEmployeeScreen from './employeeManagement/addEmployeeScreen';
 import EditEmployeeScreen from './employeeManagement/editEmployeeScreen';
+import GeneratePDF from './creatTable'
 import Login from './login';
 
 const Stack = createStackNavigator();
@@ -68,6 +69,14 @@ export default function AppNavigator() {
             <ScreenWrapper>
               <EditEmployeeScreen {...props} />
             </ScreenWrapper>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="createPDF">
+          {props => (
+            <ScreenWrapper>
+              <GeneratePDF {...props} />
+            </ScreenWrapper>
+
           )}
         </Stack.Screen>
       </Stack.Navigator>
