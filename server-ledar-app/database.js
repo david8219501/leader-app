@@ -44,65 +44,54 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       }
     });
 
-// Create the shifts table
-db.run(`CREATE TABLE IF NOT EXISTS shifts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  shift_date DATE NOT NULL,
-  shift_type TEXT NOT NULL,
-  shift_day TEXT NOT NULL, 
-  UNIQUE (shift_date, shift_type)
-)`, (err) => {
-  if (err) {
-    console.error('Error creating shifts table:', err.message);
-  } else {
-    console.log('Shifts table created successfully.');
-  }
-});
-
-const insertQuery = `
-  INSERT INTO shifts (shift_date, shift_type, shift_day) 
-  VALUES (?, ?, ?)
-`;
-
-const promises = shiftsToInsert.map(shift => {
-  return new Promise((resolve, reject) => {
-    const checkQuery = `
-      SELECT COUNT(*) as count FROM shifts 
-      WHERE shift_date = ? AND shift_type = ?
-    `;
-    
-    db.get(checkQuery, [shift.date, shift.type], (err, row) => {
+    // Create the shifts table
+    db.run(`CREATE TABLE IF NOT EXISTS shifts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      shift_date DATE NOT NULL,
+      shift_type TEXT NOT NULL,
+      shift_day TEXT NOT NULL, 
+      UNIQUE (shift_date, shift_type)
+    )`, (err) => {
       if (err) {
-        console.error('Error checking existing shift:', err.message);
-        return reject(err);
+        console.error('Error creating shifts table:', err.message);
+      } else {
+        console.log('Shifts table created successfully.');
       }
+    });
 
-      if (row.count > 0) {
-        console.log(`Shift already exists: ${shift.date} - ${shift.type}`);
-        return resolve(); // השיבוץ כבר קיים, לא מוסיפים אותו
-      }
-
+    const insertQuery = `
+    INSERT OR IGNORE INTO shifts (shift_date, shift_type, shift_day) 
+    VALUES (?, ?, ?)
+  `;
+  
+  const promises = shiftsToInsert.map(shift => {
+    return new Promise((resolve, reject) => {
       db.run(insertQuery, [shift.date, shift.type, shift.day], function (err) {
         if (err) {
           console.error('Error inserting shift:', err.message);
-          reject(err);
+          return reject(err);
         } else {
-          console.log(`Shift added: ${shift.date} - ${shift.type}`);
+          if (this.changes > 0) {
+            console.log(`Shift added: ${shift.date} - ${shift.type}`);
+          } else {
+            console.log(`Shift already exists: ${shift.date} - ${shift.type}`);
+          }
           resolve();
         }
       });
     });
   });
-});
-
-// הרצת כל ההבטחות
-Promise.all(promises)
-  .then(() => {
-    console.log('All shifts processed successfully.');
-  })
-  .catch(err => {
-    console.error('Error processing shifts:', err);
-  });
+  
+  // הרצת כל ההבטחות
+  Promise.all(promises)
+    .then(() => {
+      res.status(201).json({ message: 'Shifts processed successfully' });
+    })
+    .catch(err => {
+      console.error('Error processing shifts:', err);
+      res.status(500).json({ error: 'Error processing shifts', details: err.message });
+    });
+  
 
 
 
