@@ -416,9 +416,10 @@ app.post('/api/shifts/range', (req, res) => {
     }
 
     const insertQuery = `
-      INSERT INTO shifts (shift_date, shift_type, shift_day) 
+      INSERT OR IGNORE INTO shifts (shift_date, shift_type, shift_day) 
       VALUES (?, ?, ?)
     `;
+
 
     const promises = shiftsToInsert.map(shift => {
       return new Promise((resolve, reject) => {

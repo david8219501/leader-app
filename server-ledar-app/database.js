@@ -58,42 +58,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         console.log('Shifts table created successfully.');
       }
     });
-
-    const insertQuery = `
-    INSERT OR IGNORE INTO shifts (shift_date, shift_type, shift_day) 
-    VALUES (?, ?, ?)
-  `;
-  
-  const promises = shiftsToInsert.map(shift => {
-    return new Promise((resolve, reject) => {
-      db.run(insertQuery, [shift.date, shift.type, shift.day], function (err) {
-        if (err) {
-          console.error('Error inserting shift:', err.message);
-          return reject(err);
-        } else {
-          if (this.changes > 0) {
-            console.log(`Shift added: ${shift.date} - ${shift.type}`);
-          } else {
-            console.log(`Shift already exists: ${shift.date} - ${shift.type}`);
-          }
-          resolve();
-        }
-      });
-    });
-  });
-  
-  // הרצת כל ההבטחות
-  Promise.all(promises)
-    .then(() => {
-      res.status(201).json({ message: 'Shifts processed successfully' });
-    })
-    .catch(err => {
-      console.error('Error processing shifts:', err);
-      res.status(500).json({ error: 'Error processing shifts', details: err.message });
-    });
-  
-
-
+    
 
     // Create the shift_assignments table
     db.run(`CREATE TABLE IF NOT EXISTS shift_assignments (
