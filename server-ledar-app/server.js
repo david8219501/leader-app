@@ -356,8 +356,6 @@ app.post('/api/shifts/range', (req, res) => {
     const day = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10) - 1; // חודשים מתחילים מ-0
     const year = parseInt(parts[2], 10);
-
-    // אם השנה היא בשתי ספרות, המרתה לארבע ספרות
     const fullYear = year < 100 ? 2000 + year : year;
 
     return new Date(Date.UTC(fullYear, month, day));
@@ -367,6 +365,7 @@ app.post('/api/shifts/range', (req, res) => {
   const end = parseDate(endDate);
 
   if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    console.error('Invalid date range:', { startDate, endDate });
     return res.status(400).json({ error: 'Invalid date range' });
   }
 
@@ -376,12 +375,14 @@ app.post('/api/shifts/range', (req, res) => {
     WHERE shift_date BETWEEN ? AND ?
   `;
 
+  console.log('Querying existing shifts...');
   db.all(existingShiftsQuery, [startDate, endDate], (err, rows) => {
     if (err) {
       console.error('Error checking existing shifts:', err.message);
       return res.status(500).json({ error: 'Error checking existing shifts' });
     }
 
+    console.log('Existing shifts retrieved:', rows);
     const existingShifts = new Set(rows.map(shift => `${shift.shift_date}-${shift.shift_type}`));
 
     const shiftsToInsert = [];
@@ -408,6 +409,8 @@ app.post('/api/shifts/range', (req, res) => {
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
+    console.log('Shifts to insert:', shiftsToInsert);
+
     if (shiftsToInsert.length === 0) {
       return res.status(200).json({ message: 'All shifts already exist, no new shifts to add.' });
     }
@@ -432,6 +435,7 @@ app.post('/api/shifts/range', (req, res) => {
 
     Promise.all(promises)
       .then(() => {
+        console.log('New shifts added successfully');
         res.status(201).json({ message: 'New shifts added successfully' });
       })
       .catch(err => {
@@ -440,6 +444,7 @@ app.post('/api/shifts/range', (req, res) => {
       });
   });
 });
+
 
 app.delete('/api/shifts/range', (req, res) => {
   const { startDate, endDate } = req.body;
