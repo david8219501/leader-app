@@ -64,16 +64,25 @@ export default function EditEmployeeScreen() {
         phoneNumber: phoneNumber.trim(),
         email: email.trim(),
       };
-
+    
       // שליחת בקשה לעדכון העובד לפי ID
-      await axios.put(`http://${config.data}/api/employees/${route.params.employee.id}`, employeeData, { timeout: 3000 });
-
-      Alert.alert("העובד עודכן בהצלחה");
-      navigation.goBack();
+      const response = await axios.put(`http://${config.data}/api/employees/${route.params.employee.id}`, employeeData, { timeout: 3000 });
+    
+      // אם העדכון הצליח, החזר את המשתמש לדף הקודם
+      if (response.status === 200) {
+        Alert.alert("העובד עודכן בהצלחה");
+        navigation.goBack(); // חזרה לדף הקודם
+      }
     } catch (error) {
-      console.error('Error updating employee:', error);
-      Alert.alert('שגיאה', 'לא ניתן לעדכן את העובד');
+      if (error.response && error.response.data && error.response.data.message) {
+        // אם יש הודעה מהשרת
+        Alert.alert(error.response.data.message);
+      } else {
+        console.error('שגיאה בעדכון עובד:', error);
+        Alert.alert('שגיאה', 'לא ניתן לעדכן את העובד');
+      }
     }
+    
   };
 
   return (

@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const db = require('./database.js'); // ודא שהקובץ database.js נמצא באותה תיקייה
 const path = require('path'); // ייבוא מודול path
+const moment = require('moment');
 
 
 app.use(cors());
@@ -163,19 +164,20 @@ app.get('/api/employees', (req, res) => {
 });
 
 // Create a new employee
-  app.post('/api/employees', (req, res) => {
+app.post('/api/employees', (req, res) => {
   const newEmployee = req.body;
 
   // בדיקה אם המייל כבר קיים
   const checkEmailQuery = 'SELECT * FROM employees WHERE email = ?';
   db.get(checkEmailQuery, [newEmployee.email], (err, row) => {
     if (err) {
-      console.error('Error checking email:', err.message);
-      return res.status(500).json({ error: 'Error checking email' });
+      console.error('שגיאה בבדיקת מייל:', err.message);
+      return res.status(500).json({ error: 'שגיאה בבדיקת מייל' });
     }
 
     if (row) {
-      return res.status(400).json({ error: 'Email already exists' });
+      // החזרת הודעה למשתמש אם המייל כבר קיים
+      return res.json({ message: 'המייל כבר קיים במערכת' });
     }
 
     // אם המייל לא קיים, המשך עם ההכנסה
@@ -194,15 +196,14 @@ app.get('/api/employees', (req, res) => {
 
     db.run(query, params, function (err) {
       if (err) {
-        console.error('Error creating employee:', err.message);
+        console.error('שגיאה ביצירת עובד:', err.message);
         res.status(500).json({ error: err.message });
       } else {
-        res.status(201).json({ message: 'New employee added successfully', id: this.lastID });
+        res.status(201).json({ message: 'עובד חדש נוסף בהצלחה', id: this.lastID });
       }
     });
   });
 });
-
 
 // Update an employee
 app.put('/api/employees/:id', (req, res) => {
@@ -213,17 +214,17 @@ app.put('/api/employees/:id', (req, res) => {
   const checkEmailQuery = 'SELECT * FROM employees WHERE email = ? AND id != ?';
   db.get(checkEmailQuery, [editedEmployee.email, employeeId], (err, row) => {
     if (err) {
-      console.error('Error checking email:', err.message);
-      return res.status(500).json({ error: 'Error checking email' });
+      console.error('שגיאה בבדיקת מייל:', err.message);
+      return res.status(500).json({ error: 'שגיאה בבדיקת מייל' });
     }
 
     if (row) {
-      // אם מצאנו משתמש אחר עם אותו מייל, מחזירים שגיאה
-      return res.status(400).json({ error: 'Email already exists for another employee' });
+      // אם מצאנו משתמש אחר עם אותו מייל, מחזירים הודעה ולא שגיאה
+      return res.status(400).json({ message: 'המייל כבר קיים במערכת' });
     }
 
     // עדכון המשתמש אם לא נמצא משתמש עם אותו מייל
-    const position = editedEmployee.position || 'עובדת'; // ברירת מחדל ל"עובדת" אם לא הוכנס position
+    const position = editedEmployee.position || 'עובדת';
 
     const query = `
       UPDATE employees
@@ -246,15 +247,14 @@ app.put('/api/employees/:id', (req, res) => {
 
     db.run(query, params, function (err) {
       if (err) {
-        console.error('Error updating employee:', err.message);
-        res.status(500).json({ error: err.message });
+        console.error('שגיאה בעדכון עובד:', err.message);
+        return res.status(500).json({ error: err.message });
       } else {
-        res.json({ message: 'Employee updated successfully', rowsAffected: this.changes });
+        res.json({ message: 'העובד עודכן בהצלחה', rowsAffected: this.changes });
       }
     });
   });
 });
-
 
 // Delete an employee
 app.delete('/api/employees/:id', (req, res) => {
@@ -397,10 +397,10 @@ app.post('/api/shifts/range', (req, res) => {
     while (currentDate <= end) {
       const dayName = getDayName(currentDate);
       shiftTypes.forEach(shiftType => {
-        const shiftIdentifier = `${currentDate.getUTCDate().toString().padStart(2, '0')}/${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}/${currentDate.getUTCFullYear().toString().slice(-2)}-${shiftType}`;
+        const shiftIdentifier = `${currentDate.getUTCFullYear()}-${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}-${currentDate.getUTCDate().toString().padStart(2, '0')}-${shiftType}`;
         if (!existingShifts.has(shiftIdentifier)) {
           shiftsToInsert.push({
-            date: `${currentDate.getUTCDate().toString().padStart(2, '0')}/${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}/${currentDate.getUTCFullYear().toString().slice(-2)}`,
+            date: `${currentDate.getUTCFullYear()}-${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}-${currentDate.getUTCDate().toString().padStart(2, '0')}`,
             type: shiftType,
             day: dayName
           });
@@ -419,7 +419,6 @@ app.post('/api/shifts/range', (req, res) => {
       INSERT OR IGNORE INTO shifts (shift_date, shift_type, shift_day) 
       VALUES (?, ?, ?)
     `;
-
 
     const promises = shiftsToInsert.map(shift => {
       return new Promise((resolve, reject) => {
@@ -446,45 +445,53 @@ app.post('/api/shifts/range', (req, res) => {
   });
 });
 
-
 app.delete('/api/shifts/range', (req, res) => {
   const { startDate, endDate } = req.body;
 
-  // Validate input
+  // בדוק שהשדות לא ריקים
   if (!startDate || !endDate) {
-    return res.status(400).json({ error: 'Start date and end date are required.' });
+      return res.status(400).json({ error: 'Start date and end date are required.' });
   }
 
+  // המרה לפורמט הנכון
+  const trimmedStartDate = moment(startDate.trim(), 'DD/MM/YY').format('YYYY-MM-DD');
+  const trimmedEndDate = moment(endDate.trim(), 'DD/MM/YY').format('YYYY-MM-DD');
+
+  console.log(`Trimmed Start Date: ${trimmedStartDate}`);
+  console.log(`Trimmed End Date: ${trimmedEndDate}`);
+
+  // שאילתא לבדיקת משמרות בטווח התאריכים
   const fetchShiftIdsQuery = `
-    SELECT id FROM shifts WHERE shift_date BETWEEN ? AND ?
+      SELECT id FROM shifts 
+      WHERE shift_date BETWEEN ? AND ?
   `;
 
-  db.all(fetchShiftIdsQuery, [startDate, endDate], (err, rows) => {
-    if (err) {
-      console.error('Failed to fetch shift IDs:', err.message);
-      return res.status(500).json({ error: err.message });
-    }
-
-    if (rows.length === 0) {
-      return res.json({ message: 'No shifts found in the given date range.' });
-    }
-    
-    const shiftIds = rows.map(row => row.id);
-    const placeholders = shiftIds.map(() => '?').join(', ');
-    const deleteAssignmentsQuery = `
-      DELETE FROM shift_assignments WHERE shift_id IN (${placeholders})
-    `;
-
-    db.run(deleteAssignmentsQuery, shiftIds, function(err) {
+  db.all(fetchShiftIdsQuery, [trimmedStartDate, trimmedEndDate], (err, rows) => {
       if (err) {
-        console.error('Error deleting shift assignments:', err.message);
-        return res.status(500).json({ error: err.message });
+          return res.status(500).json({ error: err.message });
       }
-      res.json({ message: `${this.changes} shift assignments deleted successfully.` });
-    });
+
+      // אם לא נמצאו משמרות
+      if (rows.length === 0) {
+          return res.json({ message: 'No shifts found in the given date range.' });
+      }
+
+      // אם נמצאו משמרות, נבצע מחיקה
+      const shiftIds = rows.map(row => row.id);
+      const deleteAssignmentsQuery = `
+          DELETE FROM shift_assignments 
+          WHERE shift_id IN (${shiftIds.join(',')})
+      `;
+
+      db.run(deleteAssignmentsQuery, function(err) {
+          if (err) {
+              return res.status(500).json({ error: err.message });
+          }
+
+          return res.json({ message: `Successfully deleted ${this.changes} shift assignments.` });
+      });
   });
 });
-
 
 
 
@@ -494,26 +501,44 @@ app.post('/api/shifts/assign', (req, res) => {
 
   // בדוק אם המערך ריק
   if (!assignments || assignments.length === 0) {
-      // במקרה של מערך ריק, פשוט לא עושים כלום
-      return; // מחזירים תשובה ריקה
+      return res.status(400).json({ error: 'No assignments provided' }); // מחזירים תשובה ריקה עם סטטוס שגיאה
   }
 
   const processedAssignments = [];
   let errorOccurred = false;
 
+  const convertDateFormat = (dateString) => {
+      const parts = dateString.split('/');
+      if (parts.length !== 3) return null;
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // חודשים מתחילים מ-0
+      const year = parseInt(parts[2], 10);
+      const fullYear = year < 100 ? 2000 + year : year; // המרה לשנת 2000 אם השנה פחות מ-100
+
+      // החזרת התאריך בפורמט YYYY-MM-DD
+      return `${fullYear}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  };
+
   assignments.forEach(([index, firstName, lastName, shiftType, date]) => {
+      const formattedDate = convertDateFormat(date);
+      if (!formattedDate) {
+          console.error('Invalid date format:', date);
+          errorOccurred = true;
+          return;
+      }
+
       const getShiftIdQuery = `
           SELECT id FROM shifts WHERE shift_date = ? AND shift_type = ?
       `;
 
-      db.get(getShiftIdQuery, [date, shiftType], (err, shiftRow) => {
+      db.get(getShiftIdQuery, [formattedDate, shiftType], (err, shiftRow) => {
           if (err) {
               console.error('Error fetching shift ID:', err.message);
               errorOccurred = true;
               return;
           }
           if (!shiftRow) {
-              console.error(`Shift not found for date: ${date} and type: ${shiftType}`);
+              console.error(`Shift not found for date: ${formattedDate} and type: ${shiftType}`);
               return; // המשך לולאת ה-forEach
           }
           console.log('Found shift:', shiftRow);
@@ -564,7 +589,6 @@ app.post('/api/shifts/assign', (req, res) => {
       res.status(201).json({ message: 'Shift assignments processed', assignments: processedAssignments });
   }, 100);
 });
-
 
 
 // Start the server

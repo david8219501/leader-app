@@ -30,12 +30,10 @@ const Timetable = () => {
       // קריאה ל-API של העובדים
       const employeeResponse = await axios.get(`http://${config.data}/api/employees`);
       const employeeData = employeeResponse.data.data;
-      console.log(employeeData);  
   
       // קריאה ל-API של משתמש ספציפי (למשל, עם ID 1)
       const userResponse = await axios.get(`http://${config.data}/api/users/1`);
       const userData = userResponse.data.data; // הנח שיש שדה 'data' בתגובה
-      console.log(userResponse);  
   
       // מיון נתוני העובדים לפי שם פרטי
       const sortedData = employeeData.sort((a: Employee, b: Employee) => {
@@ -47,7 +45,6 @@ const Timetable = () => {
         ...employee,
         user: userData || null // הוספת מידע על המשתמש
       }));
-      console.log(combinedData);
       setEmployeeData(combinedData);
     } catch (error) {
       console.error('Error fetching employee data:', error);
@@ -58,76 +55,99 @@ const Timetable = () => {
   };
   
   
-  function sendShiftAssignment(shiftData) {
-    fetch(`http://${config.data}/api/shifts/assign`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(shiftData) // שליחת shiftData
-    })
-    .then(response => {
-        if (!response.ok) {
-            // אם התגובה לא תקינה, זריקת שגיאה
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json(); // ניתוח JSON
-    })
-    .then(data => {
-        console.log('Success:', data);
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+// פונקציה לשליחת הקצאות משמרות
+function sendShiftAssignment(shiftData) {
+  fetch(`http://${config.data}/api/shifts/assign`, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(shiftData) // שליחת shiftData בפורמט JSON
+  })
+  .then(response => {
+      if (!response.ok) {
+          // אם התגובה לא תקינה, זריקת שגיאה
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json(); // ניתוח תגובת JSON
+  })
+  .then(data => {
+      console.log('Success:', data); // הצלחה
+  })
+  .catch((error) => {
+      console.error('Error:', error); // טיפול בשגיאה
+  });
 }
 
-
-  const sendShiftRangeQuery = async (startDate: string, endDate: string) => {
-    try {
-      const response = await fetch(`http://${config.data}/api/shifts/range`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ startDate, endDate }),
-      });
+// פונקציה להוספת משמרות בטווח תאריכים
+const sendShiftRangeQuery = async (startDate, endDate) => {
+  console.log('Start Date:', startDate);
+  console.log('End Date:', endDate);
   
+  // בדיקות בסיסיות על התאריכים
+  if (!startDate || !endDate) {
+      console.error('Error: Start date and end date must be provided.');
+      return { success: false, error: 'Both start and end dates are required.' };
+  }
+
+  // המרת תאריכים לפורמט חוקי
+  const formattedStartDate = startDate.split('/').reverse().join('-');
+  const formattedEndDate = endDate.split('/').reverse().join('-');
+  
+  if (new Date(formattedStartDate) >= new Date(formattedEndDate)) {
+      console.error('Error: Start date must be before end date.');
+      return { success: false, error: 'Start date must be before end date.' };
+  }
+
+  try {
+      const response = await fetch(`http://${config.data}/api/shifts/range`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ startDate, endDate }),
+      });
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('Shifts added successfully:', data.message);
-        return data;
+          const data = await response.json();
+          console.log('Shifts added successfully:', data.message);
+          return { success: true, data };
       } else {
-        const errorData = await response.json();
-        console.error('Error:', errorData.error);
-        return null;
+          const errorData = await response.json();
+          console.error('Error:', errorData.error);
+          return { success: false, error: errorData.error };
       }
-    } catch (error) {
+  } catch (error) {
       console.error('Error sending request:', error);
-      return null;
-    }
-  };
+      return { success: false, error: error.message };
+  }
+};
 
-  const deleteShiftAssignmentsInRange = async (startDate: string, endDate: string) => {
-    try {
-      const response = await fetch(`http://${config.data}/api/shifts/range`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ startDate, endDate }),
-      });
-  
-      if (!response.ok) {
-        return
-      }
-  
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error deleting shift assignments:', error.message);
-      throw error;
+
+// פונקציה למחיקת הקצאות משמרות בטווח תאריכים
+const deleteShiftAssignmentsInRange = async (startDate, endDate) => {
+  try {
+    const response = await fetch(`http://${config.data}/api/shifts/range`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ startDate, endDate }), // שליחת טווח התאריכים בפורמט JSON
+    });
+
+    if (!response.ok) {
+      return; // יציאה מוקדמת אם יש בעיה בתגובה
     }
-  };
+
+    const data = await response.json(); // ניתוח JSON במקרה של הצלחה
+    console.log('Shifts deleted successfully:', data.message); // הצלחה
+    return data;
+  } catch (error) {
+    console.error('Error deleting shift assignments:', error.message); // טיפול בשגיאה
+    throw error; // זריקת שגיאה אם קרתה
+  }
+};
+
 
   useEffect(() => {
     if (isFocused) {
@@ -153,8 +173,8 @@ const Timetable = () => {
 
   const getWeekBoundaries = (week) => {
     return {
-      startOfWeek: week.startOf('week').format('DD/MM/YY'),
-      endOfWeek: week.endOf('week').format('DD/MM/YY'),
+      startOfWeek: week.startOf('week').format(' DD/MM/YY'),
+      endOfWeek: week.endOf('week').format(' DD/MM/YY'),
     };
   };
 
@@ -223,7 +243,6 @@ const Timetable = () => {
   
   
   const renderPickerForShift = (day, timeOfDay) => {
-    console.log("Employee Data:", employeeData); // דיאגנוסטיקה
     return (
       <View style={styles.pickerContainer}>
         {[1, 2, 3].map((index) => (
