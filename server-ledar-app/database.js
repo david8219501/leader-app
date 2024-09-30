@@ -44,7 +44,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       }
     });
 
-    // Create the shifts table
+    // Create the shifts table (with DATE type for shift_date)
     db.run(`CREATE TABLE IF NOT EXISTS shifts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       shift_date DATE NOT NULL,
@@ -58,7 +58,6 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
         console.log('Shifts table created successfully.');
       }
     });
-    
 
     // Create the shift_assignments table
     db.run(`CREATE TABLE IF NOT EXISTS shift_assignments (
@@ -77,17 +76,6 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       }
     });
   }
-});
-
-// אופציונלי: סגירת חיבור למסד הנתונים בצורה מסודרת
-process.on('exit', () => {
-  db.close((err) => {
-    if (err) {
-      console.error('Error closing the database:', err.message);
-    } else {
-      console.log('Database connection closed.');
-    }
-  });
 });
 
 module.exports = db;
